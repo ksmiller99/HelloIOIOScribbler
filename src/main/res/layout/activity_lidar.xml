@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rect"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ToggleButton
+            android:id="@+id/tglLidar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:onClick="tglOnClick"
+            android:enabled="false"
+            android:textOff="LIDAR is OFF"
+            android:textOn="LIDAR is ON" />
+
+        <Button
+            android:id="@+id/btnErase"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="btnEraseOnClick"
+            android:text="Erase" />
+
+        <Button
+            android:id="@+id/btnMain"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="btnMainOnClick"
+            android:text="Main" />
+
+        <Button
+            android:id="@+id/btnSecond"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.25"
+            android:onClick="btnSecondOnClick"
+            android:text="Second" />
+
+    </LinearLayout>
+
+    <millerk31.ioio.scribbler.test.MyPanelAuto
+        android:id="@+id/pnl"
+        android:layout_width="match_parent"
+        android:layout_height="417dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0"
+            android:onClick="btnPwmOnClick"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="33"
+            android:onClick="btnPwmOnClick"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="66"
+            android:onClick="btnPwmOnClick"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="100"
+            android:onClick="btnPwmOnClick"/>
+
+        <Button
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Scan"
+            android:onClick="btnScanOnClick"/>
+
+    </LinearLayout>
+
+
+</LinearLayout>

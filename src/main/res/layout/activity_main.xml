@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/main_activity_label" />
+
+    <ToggleButton
+        android:id="@+id/ToggleButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="tglOnClick"
+        android:textOff="LED is OFF"
+        android:textOn="LED is BLINKING" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:onClick="btnSecondOnClick"
+        android:text="Go To Second Activity" />
+
+    <TextView
+        android:id="@+id/tvRxLabel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="Recieved from inQueue1" />
+
+    <TextView
+        android:id="@+id/tvRxData1"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="5"
+        android:text="" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnGetInfo"
+                android:layout_column="0"
+                android:layout_row="0"
+                android:layout_weight="1"
+                android:onClick="btnGetInfoOnClick"
+                android:text="Get Info" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnMotorsOn"
+                android:layout_column="1"
+                android:layout_row="1"
+                android:layout_weight="1"
+                android:onClick="btnMotorsOnOnClick"
+                android:text="Motors 0.3" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnMotorsOff"
+                android:layout_column="1"
+                android:layout_row="0"
+                android:layout_weight="1"
+                android:onClick="btnMotorsOffOnClick"
+                android:text="Motors Off" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn05"
+                android:layout_column="0"
+                android:layout_row="1"
+                android:layout_weight="1"
+                android:onClick="btn05OnClick"
+                android:text="0x05" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn0F"
+                android:layout_column="1"
+                android:layout_row="0"
+                android:layout_weight="1"
+                android:onClick="btn0FOnClick"
+                android:text="0x0F" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btn00"
+                android:layout_column="0"
+                android:layout_row="1"
+                android:layout_weight="1"
+                android:onClick="btnCloseOnClick"
+                android:text="Close S2" />
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnClear"
+                android:layout_column="0"
+                android:layout_row="1"
+                android:layout_weight="1"
+                android:onClick="btnClearOnClick"
+                android:text="Clear" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/btnSong"
+                android:layout_column="0"
+                android:layout_row="1"
+                android:layout_weight="1"
+                android:onClick="btnSongOnClick"
+                android:text="Song" />
+
+        </LinearLayout>
+
+        <RadioGroup
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/rgRepeat">
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Repeat On"
+                android:id="@+id/rbRepeatOn"/>
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Repeat Off"
+                android:id="@+id/rbRepeatOff"
+                android:checked="true"/>
+
+
+        </RadioGroup>
+    </LinearLayout>
+</LinearLayout>
+

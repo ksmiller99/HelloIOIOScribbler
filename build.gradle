@@ -1,0 +1,34 @@
+apply plugin: 'com.android.application'
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.2'
+    }
+}
+
+android {
+    buildToolsVersion "23.0.2"
+    compileSdkVersion 19
+}
+
+dependencies {
+    compile 'com.github.ytai.ioio:IOIOLibAndroid:5.07'
+    compile 'com.github.ytai.ioio:IOIOLibAndroidBluetooth:5.07'
+    compile 'com.github.ytai.ioio:IOIOLibAndroidAccessory:5.07'
+    compile 'com.github.ytai.ioio:IOIOLibAndroidDevice:5.07'
+
+    // https://mvnrepository.com/artifact/org.zeromq/jeromq
+    //compile group: 'org.zeromq', name: 'jeromq', version: '0.3.4'
+
+    compile 'com.android.support:appcompat-v7:19.1.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+
