@@ -54,8 +54,12 @@ public class RpLidar {
     private static RplidarDeviceHealth _healthInfo;
     private static RplidarDeviceInfo _deviceInfo;
     private static float _lidarSpeed = 0.0f;        //duty cycle 0.0 - 1.0
-    private static boolean busy = false;
+    private static boolean _busy = false;
+    private static boolean _stopRequest = false;
 
+    private static Thread _thdGrabScanPoints = null;
+
+    private Uart _uart;
     private InputStream _inputStream;
     private OutputStream _outputStream;
 
@@ -96,8 +100,6 @@ public class RpLidar {
      * Robopeak A2 Lidar object.
      */
     public RpLidar(){
-        //outQueue = new ConcurrentLinkedQueue<Byte>();
-        //inQueue = new ConcurrentLinkedQueue<Byte>();
         _healthInfo = new RplidarDeviceHealth();
         _deviceInfo = new RplidarDeviceInfo();
 
@@ -109,28 +111,35 @@ public class RpLidar {
         String TAG = "RpLidar.connect";
 
         Log.d(TAG,"Connect started");
-        if (busy){
-            Log.d(TAG,"Connect return: busy");
+        if (_busy){
+            Log.d(TAG,"Connect return: _busy");
 
             return RESULT_BUSY;
         }
-        busy = true;
+        _busy = true;
 
         int retval = RPTypes.RESULT_OPERATION_FAIL;
 
         if(!IOIOScribblerService.ioio_state){
             _isconnected = false;
-            busy = false;
-            Log.d(TAG,"Connect return: IOIO not connected");
+            Log.d(TAG,"Return: IOIO not connected");
+            _busy = false;
             return retval;
         }
 
-        _inputStream = uart.getInputStream();
-        _outputStream = uart.getOutputStream();
+        this._uart = uart;
+        _inputStream = _uart.getInputStream();
+        _outputStream = _uart.getOutputStream();
+
+        //give time for streams to open
+        Thread.yield();
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
-             e.printStackTrace();
+            e.printStackTrace();
+            Log.d(TAG,"FAIL: sleep interrupt");
+            _busy = false;
+            return retval;
         }
 
         Log.d(TAG,"Flushing");
@@ -139,19 +148,26 @@ public class RpLidar {
             _outputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: IO Exception");
+            _busy = false;
+            return retval;
         }
 
         Log.d(TAG,"RESET Starting...");
         if (!reset()){
-            busy = false;
-            Log.d(TAG,"Connect return: reset failed");
+            Log.d(TAG,"FAIL: reset() failed");
+            _busy = false;
             return retval;
         }
 
+        //give undocumented reset data response time to be received, then flush it
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: sleep interrupt");
+            _busy = false;
+            return retval;
         }
 
         Log.d(TAG,"Before flush...");
@@ -159,6 +175,9 @@ public class RpLidar {
             Log.d(TAG,"... inputStream.avail = "+_inputStream.available());
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: IO Exception");
+            _busy = false;
+            return retval;
         }
 
         _flushInput();
@@ -166,6 +185,9 @@ public class RpLidar {
             _outputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: IO Exception");
+            _busy = false;
+            return retval;
         }
 
         Log.d(TAG,"After flush...");
@@ -173,33 +195,50 @@ public class RpLidar {
             Log.d(TAG,"... inputStream.avail = "+_inputStream.available());
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: IO Exception");
+            _busy = false;
+            return retval;
         }
 
         Log.d(TAG,"GetInfo started");
         if(!getInfo()){
-            busy=false;
-            Log.d(TAG,"Connect return: GetInfo Failed");
+            Log.d(TAG,"FAIL: GetInfo() Failed");
+            _busy =false;
             return retval;
         }
 
         Log.d(TAG,"GetHealth started");
         if(!getHealth()){
-            busy=false;
-            Log.d(TAG,"Connect return:GetHealth Failed");
+            Log.d(TAG,"FAIL: GetHealth() Failed");
+            _busy =false;
             return retval;
         }
 
         _isconnected = true;
         retval =  RPTypes.RESULT_OK;
-        busy = false;
-        Log.d(TAG,"Connect return: SUCCESS");
+        _busy = false;
+        Log.d(TAG,"Return: SUCCESS");
         return retval;
     }
 
     // close the currently opened serial interface
-    public void end()
+    public void disconnect()
     {
-        //IOIO handles
+        String TAG = "RpLidar.disconnect";
+
+        Log.d(TAG,"Starting...");
+        if(_thdGrabScanPoints != null && _thdGrabScanPoints.isAlive()){
+            _thdGrabScanPoints.interrupt();
+        }
+        _busy = true;
+        _outputStream = null;
+        _inputStream = null;
+        _uart = null;
+        _healthInfo = new RplidarDeviceHealth();
+        _deviceInfo = new RplidarDeviceInfo();
+        _lidarSpeed = 0.0f;
+        Log.d(TAG,"Finished");
+        _busy = false;
     }
 
     // check whether the serial interface is opened
@@ -248,19 +287,27 @@ public class RpLidar {
 
         RplRequest req = getRplRequest(RequestTypes.RESET);
         if(req==null){
-            Log.d(TAG,"Return Fail - req = null");
+            Log.d(TAG,"FAIL: req = null");
             return false;
         }
 
         if (!doRplRequest(req)) {
-            Log.d(TAG,"Return - doRplRequest failed");
+            Log.d(TAG,"FAIL: doRplRequest failed");
             return false;
         }
 
         //troubleshooting
-        long timeoutMs = System.currentTimeMillis()+500;
-        while (System.currentTimeMillis() < timeoutMs){
-            Thread.yield();
+//        long timeoutMs = System.currentTimeMillis()+1000;
+//        while (System.currentTimeMillis() < timeoutMs){
+//            Thread.yield();
+//        }
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Log.d(TAG,"FAIL: Sleep interrupted");
+            return false;
         }
 
         Log.d(TAG,"Before flush...");
@@ -268,6 +315,8 @@ public class RpLidar {
             Log.d(TAG,"... inputStream.avail = "+_inputStream.available());
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: IO Exception");
+            return false;
         }
 
         _flushInput();
@@ -275,6 +324,8 @@ public class RpLidar {
             _outputStream.flush();
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: Sleep interrupted");
+            return false;
         }
 
         Log.d(TAG,"After flush...");
@@ -282,9 +333,12 @@ public class RpLidar {
             Log.d(TAG,"... inputStream.avail = "+_inputStream.available());
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"FAIL: Sleep interrupted");
+            return false;
         }
 
 
+        Log.d(TAG,"Return: SUCCESS");
         return true;
     }
 
@@ -362,13 +416,47 @@ public class RpLidar {
     }
 
     public synchronized boolean startForceScan(){
+        String TAG = "RpLidar.startForcecan";
+        Log.d(TAG,"Starting...");
+
         if (!isOpen()) return false;
         if (!stop()) return false;
 
         RplRequest req = getRplRequest(RequestTypes.FORCE_SCAN);
         if(req==null) return false;
 
-        return waitByteString(req.resDesc,500);
+        _busy = true;
+        if (!doRplRequest(req)){
+            _busy = false;
+            Log.d(TAG,"FAILED doRplRequesg");
+            return false;
+        }
+
+        grabScanPoints();
+        Log.d(TAG,"Exiting...");
+
+        return true;
+
+    }
+
+    private void grabScanPoints(){
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                RPLidarScanPoint scanPoint = null;
+                while(!_stopRequest){
+                    scanPoint = waitScanPoint();
+                    if (scanPoint == null) {
+                        break;
+                    }
+                    Log.d("RpLidar.grabScanPoints","ScanPoint: "+scanPoint.angle+" "+scanPoint.distance);
+                }
+                _busy = false;
+            }
+        });
+        thread.setName("thdGrabScanPoints");
+        _thdGrabScanPoints = thread;
+        thread.start();
     }
 
     public synchronized boolean startExpressScan(){
@@ -381,13 +469,12 @@ public class RpLidar {
         return waitByteString(req.resDesc,500);
     }
 
-    public synchronized boolean waitScanPoint(){
+    public synchronized RPLidarScanPoint waitScanPoint(){
         int timeout = 500;
         byte[] b = captureNBytes(5, timeout);
-        if(b == null) return false;
+        if(b == null) return null;
 
-        //todo more processing
-        return true;
+        return new RPLidarScanPoint(b);
     }
 
     /**
@@ -429,6 +516,12 @@ public class RpLidar {
             retval = false;
             Log.d(TAG,"Return - waitByteStringFailed");
             return retval;
+        }
+
+        //multiples handled by caller
+        if(req.respMode == RespMode.MULTIPLE){
+            Log.d(TAG,"Return - RespMode.MULTIPLE");
+            return true;
         }
 
         //capture data response bytes
@@ -775,11 +868,6 @@ public class RpLidar {
         }
     }
 
-    public void qNotify(){
-        // TODO: 10/26/2016
-        //object was notified of data in input queue
-    }
-
     public boolean isconnected(){
         return _isconnected;
     }
@@ -800,6 +888,8 @@ public class RpLidar {
      */
     private void _flushInput()
     {
+        String TAG = "RpLidar._flushInput";
+
         final int arrSize = 1000;   // assume no more than this many characters in response
         byte[] readBuffer = new byte[arrSize];
 
@@ -807,7 +897,10 @@ public class RpLidar {
         {
             while( _inputStream.available() > 0 )
                 _inputStream.read( readBuffer );
-        } catch (IOException e) {e.printStackTrace();}
+        } catch (IOException e) {
+            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
+        }
     }
 
     public boolean setLidarSpeed(float spd){
@@ -824,10 +917,12 @@ public class RpLidar {
     public float getlidarSpeed(){
         return _lidarSpeed;
     }
-    public boolean isBusy(){ return busy;}
-    public void unBusy(){busy = false;}
+    public boolean isBusy(){ return _busy;}
+    public void unBusy(){
+        _busy = false;}
 
     public String getDeviceInfo(){
         return _deviceInfo.toString();
     }
-}
+    public void requestStop(){_stopRequest = true;}
+ }
