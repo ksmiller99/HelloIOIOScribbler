@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import millerk31.myro.Scribbler;
+import permissionrequest.SimpleWebServer;
 
 
 /**
@@ -13,7 +14,7 @@ import millerk31.myro.Scribbler;
  */
 
 public class MyApp extends Application {
-
+    SimpleWebServer sws;
     //for UARTs
 
     // MainActivity moves here from its TX EditView
@@ -42,4 +43,11 @@ public class MyApp extends Application {
 //        }
 //        return false;
 //    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        sws = new SimpleWebServer(8080, this.getAssets());
+        sws.start();
+    }
 }

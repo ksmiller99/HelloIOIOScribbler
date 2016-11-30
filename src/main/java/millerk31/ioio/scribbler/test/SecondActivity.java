@@ -21,14 +21,22 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import static millerk31.ioio.scribbler.test.MyApp.tvRxDataSave2;
+
 import millerk31.rplidar.*;
 
 public class SecondActivity extends Activity {
 
-    RpLidarHandler rplidarHandler;
+    RpLidar rpLidar = RpLidar.getInstance();
 
     private ToggleButton toggleButton_;
-    private Button btnSend_;
+    private Button btnReset;
+    private Button btnStop;
+    private Button btnScan;
+    private Button btnXScan;
+    private Button btnFScan;
+    private Button btnInfo;
+    private Button btnHealth;
+    private Button btnSRate;
     private TextView tvRxData;
     private EditText etTxData;
 
@@ -45,12 +53,18 @@ public class SecondActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        rplidarHandler = RpLidarHandler.getInstance();
-
         setContentView(R.layout.activity_second);
 
         toggleButton_ = (ToggleButton) findViewById(R.id.ToggleButton);
         tvRxData = (TextView) findViewById(R.id.tvRxData2);
+        btnFScan = (Button) findViewById(R.id.btnFScan);
+        btnReset = (Button) findViewById(R.id.btnReset);
+        btnScan = (Button) findViewById(R.id.btnScan);
+        btnXScan = (Button) findViewById(R.id.btnXScan);
+        btnStop = (Button) findViewById(R.id.btnStop);
+        btnInfo = (Button) findViewById(R.id.btnInfo);
+        btnHealth = (Button) findViewById(R.id.btnHealth);
+        btnSRate = (Button) findViewById(R.id.btnSRate);
 
         //assume IOIO is disconnected at start
         enableUi(false);
@@ -66,7 +80,7 @@ public class SecondActivity extends Activity {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d("KSM","Second.onServiceConnected");
+            Log.d("KSM", "Second.onServiceConnected");
             isBound = true;
 
             // Create the Messenger object
@@ -101,7 +115,9 @@ public class SecondActivity extends Activity {
     };
 
     @Override
-    protected void onResume(){
+    protected void onResume() {
+        //enableLidarUi(rpLidar.isconnected());
+
         //setup broadcast receivers
         registerReceiver(myReceiver, connectFilter);
         registerReceiver(myReceiver, disconnectFilter);
@@ -109,7 +125,7 @@ public class SecondActivity extends Activity {
         registerReceiver(myReceiver, lidarDisconnectFilter);
 
         //update UI elements to match IOIO state
-        if(isBound) {
+        if (isBound) {
             Message msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new IncomingHandler());
             try {
@@ -135,7 +151,7 @@ public class SecondActivity extends Activity {
 
     @Override
     //make sure service is disconnected from activity
-    protected void onDestroy(){
+    protected void onDestroy() {
         unbindService(serviceConnection);
         messenger = null;
         isBound = false;
@@ -145,7 +161,7 @@ public class SecondActivity extends Activity {
 
     @Override
     //disable broadcast receiver when activity is not active
-    protected void onPause(){
+    protected void onPause() {
         try {
             unregisterReceiver(myReceiver);
         } catch (IllegalArgumentException e) {
@@ -162,7 +178,7 @@ public class SecondActivity extends Activity {
         super.onPause();
     }
 
-     //create handler for incoming messages (not broadcasts)
+    //create handler for incoming messages (not broadcasts)
     class IncomingHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
@@ -185,7 +201,7 @@ public class SecondActivity extends Activity {
 
                 case IOIOScribblerService.IOIO_STATUS_REPLY:
                     enableUi(msg.arg1 == 1);
-                    Log.d("KSM","IOIO_STATUS_REPLY: "+msg.arg1+" message handled" );
+                    Log.d("KSM", "IOIO_STATUS_REPLY: " + msg.arg1 + " message handled");
                     break;
 
                 case IOIOScribblerService.ERROR_REPLY:
@@ -193,19 +209,19 @@ public class SecondActivity extends Activity {
                     break;
 
                 default:
-                    Log.d("KSM","UNKNOWN MESSAGE TYPE: "+msg.what );
+                    Log.d("KSM", "UNKNOWN MESSAGE TYPE: " + msg.what);
                     super.handleMessage(msg);
             }
         }
     }
 
-    public void tglOnClick(View v){
+    public void tglOnClick(View v) {
         Log.d("KSM", "SECOND Toggle Button pressed.");
         ToggleButton tgl = (ToggleButton) v;
         int msgType;
 
         //set message type based on toggle status after clicking
-        if(tgl.isChecked())
+        if (tgl.isChecked())
             msgType = IOIOScribblerService.LED_BLINK_REQUEST;
         else
             msgType = IOIOScribblerService.LED_OFF_REQUEST;
@@ -227,13 +243,13 @@ public class SecondActivity extends Activity {
     }
 
     //go to Main activity
-    public void btnMainOnClick(View v){
+    public void btnMainOnClick(View v) {
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
 
     //go to Draw activity
-    public void btnDrawOnClick(View v){
+    public void btnDrawOnClick(View v) {
         Intent intent = new Intent(this, LidarActivity.class);
         startActivity(intent);
     }
@@ -255,7 +271,7 @@ public class SecondActivity extends Activity {
                 enableUi(true);
                 Log.d("KSM", "Broadcast LIDAR CONNECTED intent received");
 
-                tvRxData.setText(rplidarHandler.getDeviceInfo());
+                tvRxData.setText(rpLidar.getDeviceInfo());
             }
 
         }
@@ -266,57 +282,76 @@ public class SecondActivity extends Activity {
             @Override
             public void run() {
                 toggleButton_.setEnabled(enable);
+               }
+        });
+    }
+
+    private void enableLidarUi(final boolean enable) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                btnFScan.setEnabled(enable);
+                btnReset.setEnabled(enable);
+                btnScan.setEnabled(enable);
+                btnXScan.setEnabled(enable);
+                btnStop.setEnabled(enable);
+                btnInfo.setEnabled(enable);
+                btnHealth.setEnabled(enable);
+                btnSRate.setEnabled(enable);
             }
         });
     }
 
-    private String bytesToString(byte[] bytes){
+    private String bytesToString(byte[] bytes) {
         StringBuilder builder = new StringBuilder();
-        for(byte b:bytes){
-            if(b < 32 || b == 127){
-                builder.append("".format("0x%x",b));
-            }else{
-                builder.append((char)b);
+        for (byte b : bytes) {
+            if (b < 32 || b == 127) {
+                builder.append("".format("0x%x", b));
+            } else {
+                builder.append((char) b);
             }
         }
 
         return builder.toString();
     }
 
-    public void btnXScanOnClick(View v){
+    public void btnXScanOnClick(View v) {
 //        byte[] bytes = {(byte) 0xA5, 0x40};
 //        for(byte b :bytes)
 //            rplidar.outQueue.add(b);
         //rplidar.startExpressScan();
     }
 
-    public void btnResetOnClick(View v){
-        //rplidar.reset();
+    public void btnResetOnClick(View v) {
+        rpLidar.reset();
     }
 
-    public void btnStopOnClick(View v){
+    public void btnStopOnClick(View v) {
         //rplidar.stop();
     }
 
-    public void btnFScanOnClick(View v){
+    public void btnFScanOnClick(View v) {
         //rplidar.startForceScan();
     }
 
-    public void btnInfoOnClick(View v){
+    public void btnInfoOnClick(View v) {
         //rplidar.getInfo();
-        tvRxData.setText(tvRxData.getText()+rplidarHandler.getDeviceInfo());
+        tvRxData.setText(tvRxData.getText() + rpLidar.getDeviceInfo());
     }
 
-    public void btnHealthOnClick(View v){
+    public void btnHealthOnClick(View v) {
         //rplidar.getHealth();
     }
 
-    public void btnScanOnClick(View v){
+    public void btnScanOnClick(View v) {
         //rplidar.startScan();
     }
 
-    public void btnSRateOnClick(View v){
+    public void btnSRateOnClick(View v) {
         //rplidar.getSampleRate();
     }
 
+    public void btnUnBusyOnClick(View v){
+        rpLidar.unBusy();
+    }
 }

@@ -21,6 +21,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.List;
+
 import millerk31.myro.Scribbler;
 
 //import static millerk31.ioio.scribbler.test.MyApp.s2InQueue;
@@ -32,6 +37,7 @@ public class MainActivity extends Activity {
     Scribbler scribbler = Scribbler.getInstance();
 
     private ToggleButton toggleButton_;
+    private TextView tvIpAddress;
     private TextView tvRxData;
     private Button btnGetInfo;
     private Button btnMotorsOn;
@@ -39,10 +45,14 @@ public class MainActivity extends Activity {
     private Button btn05;
     private Button btn00;
     private Button btn0F;
+    private Button btnClear;
+    private Button btnSong;
     private RadioGroup rgRepeat;
 
     boolean isIoioBound = false;
     Messenger messenger = null;
+
+    private String ipAddress;
 
     //create IntentFilters for receiving broadcast messages
     IntentFilter connectFilter = new IntentFilter("IOIO_CONNECTED");
@@ -60,14 +70,17 @@ public class MainActivity extends Activity {
         //start the IOIO Service
         startService(new Intent(this, IOIOScribblerService.class));
 
+        tvIpAddress = (TextView)findViewById(R.id.tvIpAddress);
         toggleButton_ = (ToggleButton) findViewById(R.id.ToggleButton);
         tvRxData = (TextView) findViewById(R.id.tvRxData1);
-        btnGetInfo = (Button) findViewById(R.id.btnGetInfo);
+        btnGetInfo = (Button) findViewById(R.id.btnInfo);
         btnMotorsOn = (Button) findViewById(R.id.btnMotorsOn);
         btnMotorsOff = (Button) findViewById(R.id.btnMotorsOff);
         btn05 = (Button) findViewById(R.id.btn05);
         btn00 = (Button) findViewById(R.id.btn00);
         btn0F = (Button) findViewById(R.id.btn0F);
+        btnClear = (Button)findViewById(R.id.btnClear);
+        btnSong = (Button) findViewById(R.id.btnSong);
         rgRepeat = (RadioGroup)findViewById(R.id.rgRepeat);
         rgRepeat.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -130,6 +143,14 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onResume() {
+        ipAddress = getIPAddress(true);
+        if(ipAddress.isEmpty()){
+            ipAddress = "None - Check WiFi";
+        }
+        tvIpAddress.setText("IP Address: "+ipAddress);
+
+        enableScribblerUi(scribbler.scribblerConnected());
+
         //setup broadcast receivers
         registerReceiver(myReceiver, connectFilter);
         registerReceiver(myReceiver, disconnectFilter);
@@ -286,6 +307,22 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 toggleButton_.setEnabled(enable);
+             }
+        });
+    }
+
+    private void enableScribblerUi(final boolean enable) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                btnGetInfo.setEnabled(enable);
+                btn00.setEnabled(enable);
+                btn0F.setEnabled(enable);
+                btn05.setEnabled(enable);
+                btnMotorsOff.setEnabled(enable);
+                btnMotorsOn.setEnabled(enable);
+                btnClear.setEnabled(enable);
+                btnSong.setEnabled(enable);
             }
         });
     }
@@ -359,6 +396,35 @@ public class MainActivity extends Activity {
         }else{
             tvRxData.setText(tvRxData.getText()+"\nError: Scribbler not connected");
         }
+    }
+
+    public static String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } // for now eat exceptions
+        return "";
     }
  }
 

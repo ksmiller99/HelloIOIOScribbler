@@ -16,20 +16,24 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.ToggleButton;
 
-import millerk31.rplidar.RpLidarHandler;
+import millerk31.rplidar.RpLidar;
 
 import static millerk31.ioio.scribbler.test.R.id.pnl;
 
 public class LidarActivity extends Activity {
-    RpLidarHandler rpLidarHandler;
+    private RpLidar rpLidar = RpLidar.getInstance();
 
     private ToggleButton tglLidar;
     private Button btnErase;
     private Button btnSecond;
     private Button btnMain;
-
+    private SeekBar sbMotorSpeed;
+    private Button btnScan;
+    private TextView tvSpeedDisplay;
 
     MyPanelAuto panel;
 
@@ -48,17 +52,38 @@ public class LidarActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lidar);
 
-        rpLidarHandler = RpLidarHandler.getInstance();
-
         panel = (MyPanelAuto) findViewById(pnl);
         tglLidar = (ToggleButton) findViewById(R.id.tglLidar);
         btnErase = (Button) findViewById(R.id.btnErase);
         btnSecond = (Button) findViewById(R.id.btnSecond);
         btnMain = (Button) findViewById(R.id.btnMain);
+        sbMotorSpeed = (SeekBar)  findViewById(R.id.sbMotorSpeed);
+        btnScan = (Button) findViewById(R.id.btnScan);
+        tvSpeedDisplay = (TextView) findViewById(R.id.tvSpeedDisplay) ;
+
 
         //bind to  the IOIO service
         Intent intent = new Intent(this, IOIOScribblerService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        sbMotorSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                tvSpeedDisplay.setText("Speed: "+progress+"%");
+                rpLidar.setLidarSpeed(progress/100.0f);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     //Outbound messages go through ServiceConnection
@@ -102,6 +127,9 @@ public class LidarActivity extends Activity {
 
     @Override
     protected void onResume() {
+        sbMotorSpeed.setProgress((int) (rpLidar.getlidarSpeed() * 100));
+        enableLidarUi(rpLidar.isconnected());
+
         //setup broadcast receivers
         registerReceiver(myReceiver, connectFilter);
         registerReceiver(myReceiver, disconnectFilter);
@@ -112,13 +140,13 @@ public class LidarActivity extends Activity {
         //update UI elements to match IOIO state
         if (isBound) {
             Message msg = new Message();
-//            msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
-//            msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
-//            try {
-//                messenger.send(msg);
-//            } catch (RemoteException e) {
-//                e.printStackTrace();
-//            }
+            msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+            msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
+            try {
+                messenger.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
 
             msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
@@ -177,15 +205,15 @@ public class LidarActivity extends Activity {
 //                    break;
 //
 //                case IOIOScribblerService.LIDAR_STATUS_REPLY:
-//                    enableUi(msg.arg1 == 1);
+//                    enableIoioUi(msg.arg1 == 1);
 //                    Toast.makeText(getBaseContext(),"LIDAR Status: "+ msg.arg1, Toast.LENGTH_SHORT).show();
 //                    Log.d("KSM", "LIDAR_STATUS_REPLY: " + msg.arg1 + " message handled");
 //                    break;
 
-//                case IOIOScribblerService.IOIO_STATUS_REPLY:
-//                    enableUi(msg.arg1 == 1);
-//                    Log.d("KSM", "IOIO_STATUS_REPLY: " + msg.arg1 + " message handled");
-//                    break;
+                case IOIOScribblerService.IOIO_STATUS_REPLY:
+                    enableIoioUi(msg.arg1 == 1);
+                    Log.d("KSM", "IOIO_STATUS_REPLY: " + msg.arg1 + " message handled");
+                    break;
 
                 case IOIOScribblerService.ERROR_REPLY:
                     Log.d("KSM", "ERROR_REPLY to message type: " + msg.arg1 + " message handled");
@@ -278,34 +306,44 @@ public class LidarActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
             Log.d("KSM", "Broadcast intent received");
             if (intent.getAction().equals("IOIO_DISCONNECTED")) {
-                enableUi(false);
+                enableIoioUi(false);
                 Log.d("KSM", "Broadcast DISCONNECTED intent received");
 
             } else if (intent.getAction().equals("IOIO_CONNECTED")) {
-                enableUi(true);
+                enableIoioUi(true);
                 Log.d("KSM", "Broadcast CONNECTED intent received");
 
             } else if (intent.getAction().equals("LIDAR_DISCONNECTED")) {
-                enableUi(false);
+                enableIoioUi(false);
                 Log.d("KSM", "Broadcast LIDAR_DISCONNECTED intent received");
 
             } else if (intent.getAction().equals("LIDAR_CONNECTED")) {
-                enableUi(true);
+                enableIoioUi(true);
                 Log.d("KSM", "Broadcast LIDAR_CONNECTED intent received");
 
             } else if (intent.getAction().equals("LIDAR_DRAW")) {
-                enableUi(true);
+                enableIoioUi(true);
                 Log.d("KSM", "Broadcast LIDAR_DRAW intent received");
             }
 
         }
     };
 
-    private void enableUi(final boolean enable) {
+    private void enableIoioUi(final boolean enable) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+    }
+    private void enableLidarUi(final boolean enable) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 tglLidar.setEnabled(enable);
+                sbMotorSpeed.setEnabled(enable);
+                btnScan.setEnabled(enable);
             }
         });
     }
@@ -328,6 +366,8 @@ public class LidarActivity extends Activity {
 //        for(byte b:bytes)
 //            rplidar.outQueue.add(b);
     }
+
+
 
 }
 

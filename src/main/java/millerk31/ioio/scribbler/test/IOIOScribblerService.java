@@ -27,6 +27,7 @@ import ioio.lib.util.IOIOLooper;
 import ioio.lib.util.android.IOIOService;
 import millerk31.myro.Scribbler;
 import millerk31.myro.ScribblerHandler;
+import millerk31.rplidar.RPLidar_cmd;
 import millerk31.rplidar.RpLidarHandler;
 import millerk31.rplidar.RpLidar;
 
@@ -36,9 +37,9 @@ import millerk31.rplidar.RpLidar;
 public class IOIOScribblerService extends IOIOService {
 
     private RpLidar rpLidar;
-    private RpLidarHandler rplHandler;
+    //private RpLidarHandler rplHandler;
     Scribbler scribbler;
-    public ScribblerHandler s2Handler;
+    //public ScribblerHandler s2Handler;
 
     final Messenger messenger = new Messenger(new IncomingHandler());
 
@@ -98,7 +99,7 @@ public class IOIOScribblerService extends IOIOService {
     private static final int UART_2_TX_PIN = 12;
     private static final int UART_2_RX_PIN = 13;
     private static final int LIDAR_PWM_MOTOR = 14;
-    public static float lidar_speed = 0.0f;
+    private static float current_lidar_speed = 0.0f;
 
     public static boolean led_blink = true;    //true if LED is in BLINK mode
     private static boolean led_status = false;   //true if LED is on at this moment
@@ -122,10 +123,10 @@ public class IOIOScribblerService extends IOIOService {
     private static Uart s2Uart;
     private static Uart rpUart;
 
-    private static InputStream s2In;
-    private static OutputStream s2Out;
-    private static InputStream rplIn;
-    private static OutputStream rplOut;
+//    private static InputStream s2In;
+//    private static OutputStream s2Out;
+//    private static InputStream rplIn;
+//    private static OutputStream rplOut;
     private static PwmOutput rplMotor;
 
     @Override
@@ -133,10 +134,10 @@ public class IOIOScribblerService extends IOIOService {
         super.onCreate();
 
         Log.d("KSM", "Service onCreate started");
-        rplHandler = RpLidarHandler.getInstance();
+        //rplHandler = RpLidarHandler.getInstance();
         rpLidar = RpLidar.getInstance();
 
-        s2Handler = new ScribblerHandler();
+        //s2Handler = new ScribblerHandler();
         scribbler = Scribbler.getInstance();
 
         //create Intents for broadcast messages
@@ -264,10 +265,10 @@ public class IOIOScribblerService extends IOIOService {
 //
 //                    break;
 //
-                case LIDAR_SPEED_REQ:
-                    lidar_speed = msg.arg1 / 100.0f;
-
-                    break;
+//                case LIDAR_SPEED_REQ:
+//                    lidar_speed = msg.arg1 / 100.0f;
+//
+//                    break;
 
                 default:
                     super.handleMessage(msg);
@@ -315,16 +316,17 @@ public class IOIOScribblerService extends IOIOService {
 
                 //UART for RP-LIDAR A2
                 rpUart = ioio_.openUart(UART_2_RX_PIN, UART_2_TX_PIN, 115200, Uart.Parity.NONE, Uart.StopBits.ONE);
-                rplIn = rpUart.getInputStream();
-                rplOut = rpUart.getOutputStream();
+                //rplIn = rpUart.getInputStream();
+                //rplOut = rpUart.getOutputStream();
 
                 //connect to scribbler
                 //run in separate thread so service can continue
                 _connectScribbler();
 
-                //Lidar motor control
+                //Lidar & Lidar motor control (motor control is through PWM - not through UART)
                 rplMotor = ioio_.openPwmOutput(LIDAR_PWM_MOTOR, 25000);
-                rplMotor.setDutyCycle(lidar_speed);
+                rplMotor.setDutyCycle(0.0f);
+                _connectLidar();
 
                 led_ = ioio_.openDigitalOutput(IOIO.LED_PIN);
                 ioio_state = true;
@@ -339,9 +341,15 @@ public class IOIOScribblerService extends IOIOService {
 //                    scanIncrement = (++scanIncrement > 10)?0:scanIncrement;
 //                }
 
-                rplMotor.setDutyCycle(lidar_speed);
+                //need to ramp up to desired speed
+                if(current_lidar_speed < rpLidar.getlidarSpeed()){
+                    current_lidar_speed+=.01;
+                }else{
+                    current_lidar_speed = rpLidar.getlidarSpeed();
+                }
+                rplMotor.setDutyCycle(current_lidar_speed);
 
-                //connect to scribbler
+                //verify/establish communication with scribbler
                 if (fiveSecondTimerFlag) {
                     Log.d("S2Handler", "5 second flag set");
                     fiveSecondTimerFlag = false;
@@ -350,13 +358,9 @@ public class IOIOScribblerService extends IOIOService {
                         _connectScribbler();
                     }
 
-                    //verify communication with lidar
+                    //verify/establish communication with lidar
                     if (!lidar_connected) {
-                        Log.d("RplHandler", "IOIO Loop Thread: " + Thread.currentThread());
-                        Log.d("RplHandler", "Connect start: " + System.currentTimeMillis());
-                        lidar_connected = rplHandler.connectLidar();
-                        Log.d("RplHandler", "Connect done: " + lidar_connected + " " + System.currentTimeMillis());
-                        sendBroadcast(lidarConnectIntent);
+                        _connectLidar();
                     }
                 }
 
@@ -393,20 +397,20 @@ public class IOIOScribblerService extends IOIOService {
 //                    }
 //                }
 
-                try {
-                    if (rplIn.available() > 0) {
-                        int len = rplIn.read(inBytes2);
-                        boolean x;
-                        for (int i = 0; i < len; ++i) {
-                            x = rpLidar.inQueue.add(inBytes2[i]);
-                            if (!x) {
-                                int dummy = 0;
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//                try {
+//                    if (rplIn.available() > 0) {
+//                        int len = rplIn.read(inBytes2);
+//                        boolean x;
+//                        for (int i = 0; i < len; ++i) {
+//                            x = rpLidar.inQueue.add(inBytes2[i]);
+//                            if (!x) {
+//                                int dummy = 0;
+//                            }
+//                        }
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
 
                 /*
                 //send lidar reset every 5 seconds for debugging
@@ -419,24 +423,24 @@ public class IOIOScribblerService extends IOIOService {
                     e.printStackTrace();
                 }*/
 
-                if (!rpLidar.outQueue.isEmpty()) {
-                    while (true) {
-                        Byte ba = rpLidar.outQueue.poll();
-                        if (ba == null)
-                            break;
-
-                        try {
-                            rplOut.write(ba);
-                            Log.d("Service", "Writing to Lidar: " + ba.toString());
-                        } catch (IOException e) {
-                            Log.d("loop", "rplOut.write IO exception:\n" + e.getMessage());
-                            e.printStackTrace();
-                        } catch (Exception e) {
-                            Log.d("loop", "Write outQueue2: " + e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }
-                }
+//                if (!rpLidar.outQueue.isEmpty()) {
+//                    while (true) {
+//                        Byte ba = rpLidar.outQueue.poll();
+//                        if (ba == null)
+//                            break;
+//
+//                        try {
+//                            rplOut.write(ba);
+//                            Log.d("Service", "Writing to Lidar: " + ba.toString());
+//                        } catch (IOException e) {
+//                            Log.d("loop", "rplOut.write IO exception:\n" + e.getMessage());
+//                            e.printStackTrace();
+//                        } catch (Exception e) {
+//                            Log.d("loop", "Write outQueue2: " + e.getMessage());
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
 
             }
 
@@ -511,10 +515,38 @@ public class IOIOScribblerService extends IOIOService {
                     sendBroadcast(scribblerConnectIntent);
                     scribbler.beep(440,2);
                     scribbler.playSong("A 1; F# 1; E 1; F# 1; A 1;", .05);
-                    //s2Handler.playSong();
                 }
             }
         });
         thread.start();
+    }
+
+    private void _connectLidar() {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (!rpLidar.isBusy()) {
+                    lidar_connected = (rpLidar.connect(rpUart) == RPLidar_cmd.RPLidar_resp.RPLIDAR_STATUS_OK);
+                    if (scribbler_state) {
+                        Log.d("Service", "------------------------------------ LIDAR CONNECTED ------------------------------------");
+                        sendBroadcast(lidarConnectIntent);
+                    }
+                }else{
+                    Log.d("Service", ".................................... LIDAR BUSY ....................................");
+                }
+            }
+        });
+        thread.start();
+
+//        if (!rpLidar.isBusy()) {
+//            Log.d("Service",     "--------------------------------- ATTEMPT LIDAR CONNECT ---------------------------------");
+//            lidar_connected = (rpLidar.connect(rpUart) == RPLidar_cmd.RPLidar_resp.RPLIDAR_STATUS_OK);
+//            if (scribbler_state) {
+//                Log.d("Service", "------------------------------------ LIDAR CONNECTED ------------------------------------");
+//                sendBroadcast(lidarConnectIntent);
+//            }
+//        }else{
+//            Log.d("Service", ".................................... LIDAR BUSY ....................................");
+//        }
     }
 }
