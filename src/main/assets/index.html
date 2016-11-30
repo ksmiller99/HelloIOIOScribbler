@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+<head>
+    <title>Android Static Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+            label {
+                float: left;
+                width: 10em;
+                margin-right: 1em;
+                text-align: right;
+            }
+        </style>
+</head>
+<body>
+<h3>Scribbler Remote Control</h3>
+<div>
+    <form name="form1" action="#" method="GET">
+        <fieldset>
+            <legend>Scribbler Status</legend>
+            <label>Robot Connected:</label>***R*CONNECTED***<br>
+            <label>Robot Version:</label>***R*VERSION***<br>
+            <label>Robot:</label>***ROBOT***<br>
+            <label>Mode:</label>***MODE***<br>
+            <label>Myro-Java Version: </label>***S*VERSION***<br>
+            <label>Set Speed: </label>
+            <input type="number" name="speed" min="-1" max="1" step="0.1" value="0"><br>
+            <input type="submit" name="btnSubmit" value="Submit">
+
+        </fieldset>
+    </form>
+</div>
+</body>
+</html>

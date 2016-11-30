@@ -15,8 +15,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:onClick="tglOnClick"
             android:enabled="false"
+            android:onClick="tglOnClick"
             android:textOff="LIDAR is OFF"
             android:textOn="LIDAR is ON" />
 
@@ -49,47 +49,42 @@
     <millerk31.ioio.scribbler.test.MyPanelAuto
         android:id="@+id/pnl"
         android:layout_width="match_parent"
-        android:layout_height="417dp" />
+        android:layout_height="400dp" />
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="btnScanOnClick"
+            android:text="Scan"
+            android:id="@+id/btnScan" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <Button
+        <SeekBar
+            android:id="@+id/sbMotorSpeed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="0"
-            android:onClick="btnPwmOnClick"/>
+            android:max="100"
+            android:layout_weight="3"
+            android:progress="0"
+            />
 
-        <Button
+            <TextView
+            android:id="@+id/tvSpeedDisplay"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="33"
-            android:onClick="btnPwmOnClick"/>
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="66"
-            android:onClick="btnPwmOnClick"/>
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="100"
-            android:onClick="btnPwmOnClick"/>
-
-        <Button
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Scan"
-            android:onClick="btnScanOnClick"/>
+                android:layout_weight="1"
+            android:text="Speed: 0%" />
 
     </LinearLayout>
 

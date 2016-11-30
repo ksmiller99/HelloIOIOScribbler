@@ -60,25 +60,37 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Reset"
-                android:onClick="btnResetOnClick"/>
+                android:onClick="btnResetOnClick"
+                android:id="@+id/btnReset"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Stop"
-                android:onClick="btnStopOnClick"/>
+                android:onClick="btnStopOnClick"
+                android:id="@+id/btnStop"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Scan"
-                android:onClick="btnScanOnClick"/>
+                android:onClick="btnScanOnClick"
+                android:id="@+id/btnScan"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="UB"
+                android:onClick="btnUnBusyOnClick"
+                android:id="@+id/btnUnBusy"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="X.Scan"
-                android:onClick="btnXScanOnClick"/>
+                android:onClick="btnXScanOnClick"
+                android:id="@+id/btnXScan"/>
+
         </LinearLayout>
 
         <LinearLayout
@@ -90,25 +102,29 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="F.Scan"
-                android:onClick="btnFScanOnClick"/>
+                android:onClick="btnFScanOnClick"
+                android:id="@+id/btnFScan"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Info"
-                android:onClick="btnInfoOnClick"/>
+                android:onClick="btnInfoOnClick"
+                android:id="@+id/btnInfo"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Health"
-                android:onClick="btnHealthOnClick"/>
+                android:onClick="btnHealthOnClick"
+                android:id="@+id/btnHealth"/>
 
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="S.Rate"
-                android:onClick="btnSRateOnClick"/>
+                android:onClick="btnSRateOnClick"
+                android:id="@+id/btnSRate"/>
 
         </LinearLayout>
     </LinearLayout>

@@ -6,10 +6,11 @@
 
     <uses-sdk android:minSdkVersion="19" />
 
-    <android:uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <android:uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:name=".MyApp"
         android:icon="@drawable/ic_launcher"
@@ -45,7 +46,7 @@
                 android:resource="@xml/device_filter" />
         </activity>
         <activity android:name=".SecondActivity" />
-        <activity android:name=".LidarActivity"></activity>
+        <activity android:name=".LidarActivity"/>
     </application>
 
 </manifest>
