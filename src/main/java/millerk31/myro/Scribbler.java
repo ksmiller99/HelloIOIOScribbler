@@ -169,6 +169,7 @@ public class Scribbler{
         _serialPort = null;
         _robotVersion = new int[] { 0, 0, 0 };
         _flukeVersion = new int[] { 0, 0, 0 };
+        _commMode = "N/A";
 
         // print a warning if asserts are disabled
         boolean testAssert = false;
@@ -221,14 +222,21 @@ public boolean connect(Uart uart)
         _portName = null;
         _flukeVersion = new int[] {0, 0, 0};
         _robotVersion = new int[] {0, 0, 0};
+        _commMode = "N/A";
 
         // get the input and output streams so we can access this port
         _serialPort = uart;
-        _inputStream = uart.getInputStream();
-        _outputStream = uart.getOutputStream();
+        _inputStream = _serialPort.getInputStream();
+        _outputStream = _serialPort.getOutputStream();
 
         // flush any garbage left in input buffer
         _flushInput();
+
+        try {
+            Thread.sleep(20);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         // get info about the robot
         String info = getInfo();
@@ -265,6 +273,10 @@ public boolean connect(Uart uart)
                     _scribblerConnected = true;
                     _scribbler2Connected = true;
                 }
+            }
+            else if( tokenParts[0].equals("mode") )
+            {
+                _commMode = tokenParts[1];
             }
         }
 
@@ -2041,6 +2053,7 @@ public boolean connect(Uart uart)
     private String _portName;
     private int imageWidth;
     private int imageHeight;
+    private String _commMode;
 
     // The following variable is used for every invocation of _getJpeg.  This is an optimization so that we're not
     // constantly allocating, extending, copying, etc. this array.  As the program executes the size
@@ -3965,5 +3978,17 @@ public boolean connect(Uart uart)
 
         private ArrayList<note> notes;
 
+    }
+
+    public String robotVersion(){
+        return ""+_robotVersion[0]+"."+_robotVersion[1]+"."+_robotVersion[2];
+    }
+
+    public String commMode(){
+        return _commMode;
+    }
+
+    public String myroJavaVersion(){
+        return MYRO_JAVA_VERSION;
     }
 }
