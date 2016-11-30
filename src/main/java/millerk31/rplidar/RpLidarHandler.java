@@ -29,26 +29,26 @@ public class RpLidarHandler {
     }
 
     private RpLidar rpLidar;
-    private static final int MSG_START_HELLO        = -1;
-    private static final int MSG_CONNECT_REQUEST    = 0;
-    private static final int MSG_CONNECT_REPLY      = 1;
-    private static final int MSG_COMMAND_COMPLETE   = 2;
-    private static final int MSG_STATUS_REQUEST     = 3;   //request LIDAR status
-    private static final int MSG_STATUS_REPLY       = 4;  //arg1 == 1 if true
-    private static final int MSG_STOP               = 5;  //request LIDAR status
-    private static final int MSG_SCAN               = 6;  //request LIDAR status
-    private static final int MSG_FORCE_SCAN         = 7;  //request LIDAR status
-    private static final int MSG_RESET              = 8;  //request LIDAR status
-    private static final int MSG_GET_INFO           = 9;  //request LIDAR status
-    private static final int MSG_INFO_REPLY         = 10;  //request LIDAR status
-    private static final int MSG_GET_HEALTH         = 11;  //request LIDAR status
-    private static final int MSG_HEALTH_REPLY       = 12;  //request LIDAR status
-    private static final int MSG_GET_SAMPLERATE     = 13;  //request LIDAR status
-    private static final int MSG_SAMPLERATE_REPLY   = 14;  //request LIDAR status
-    private static final int MSG_ON_REQUEST         = 15;  //request LIDAR status
-    private static final int MSG_OFF_REQUEST        = 16;  //request LIDAR status
-    private static final int MSG_ON_REPLY           = 17;  //arg1 == 1 if true
-    private static final int MSG_OFF_REPLY          = 18;  //arg1 == 1 if true
+//    private static final int MSG_START_HELLO        = -1;
+//    private static final int MSG_CONNECT_REQUEST    = 0;
+//    private static final int MSG_CONNECT_REPLY      = 1;
+//    private static final int MSG_COMMAND_COMPLETE   = 2;
+//    private static final int MSG_STATUS_REQUEST     = 3;   //request LIDAR status
+//    private static final int MSG_STATUS_REPLY       = 4;  //arg1 == 1 if true
+//    private static final int MSG_STOP               = 5;  //request LIDAR status
+//    private static final int MSG_SCAN               = 6;  //request LIDAR status
+//    private static final int MSG_FORCE_SCAN         = 7;  //request LIDAR status
+//    private static final int MSG_RESET              = 8;  //request LIDAR status
+//    private static final int MSG_GET_INFO           = 9;  //request LIDAR status
+//    private static final int MSG_INFO_REPLY         = 10;  //request LIDAR status
+//    private static final int MSG_GET_HEALTH         = 11;  //request LIDAR status
+//    private static final int MSG_HEALTH_REPLY       = 12;  //request LIDAR status
+//    private static final int MSG_GET_SAMPLERATE     = 13;  //request LIDAR status
+//    private static final int MSG_SAMPLERATE_REPLY   = 14;  //request LIDAR status
+//    private static final int MSG_ON_REQUEST         = 15;  //request LIDAR status
+//    private static final int MSG_OFF_REQUEST        = 16;  //request LIDAR status
+//    private static final int MSG_ON_REPLY           = 17;  //arg1 == 1 if true
+//    private static final int MSG_OFF_REPLY          = 18;  //arg1 == 1 if true
     private static final int MSG_SPEED_REQ          = 19;  //arg1 == speed 0.0 - 1.0
 
     private HandlerThread ht;
@@ -74,15 +74,15 @@ public class RpLidarHandler {
         mMainHandler = new Handler(){
             public void handleMessage(Message msg){
                 switch(msg.what){
-                    case MSG_COMMAND_COMPLETE:
-                        Log.d("S2Handler", "Main Thread: received notification of command completed ");
-                        rplReady = true;
-                        break;
-
-                    case MSG_CONNECT_REPLY:
-                        Log.d("S2Handler", "Main Thread: received notification of scribbler completed ");
-                        rplReady = true;
-                        break;
+//                    case MSG_COMMAND_COMPLETE:
+//                        Log.d("S2Handler", "Main Thread: received notification of command completed ");
+//                        rplReady = true;
+//                        break;
+//
+//                    case MSG_CONNECT_REPLY:
+//                        Log.d("S2Handler", "Main Thread: received notification of scribbler completed ");
+//                        rplReady = true;
+//                        break;
 
                     default:
                         break;
@@ -96,25 +96,33 @@ public class RpLidarHandler {
             //test the thread handling for troubleshooting
             public void handleMessage (Message msg){
                 switch(msg.what){
-                    case MSG_START_HELLO:
-                        Log.d("rplHandler", "handleMessage " + msg.what + " in " + Thread.currentThread() + " now sleeping");
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        Log.d("S2Handler", "Woke up, notifying UI thread...");
-                        mMainHandler.sendEmptyMessage(MSG_COMMAND_COMPLETE);
+//                    case MSG_START_HELLO:
+//                        Log.d("rplHandler", "handleMessage " + msg.what + " in " + Thread.currentThread() + " now sleeping");
+//                        try {
+//                            Thread.sleep(5000);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                        Log.d("RplHandler", "Woke up, notifying UI thread...");
+//                        mMainHandler.sendEmptyMessage(MSG_COMMAND_COMPLETE);
+//
+//                        break;
+//
+//                    case MSG_CONNECT_REQUEST:
+//                        Log.d("RplHandler", "Starting connect... "+System.currentTimeMillis()+"in thread "+Thread.currentThread());
+//                        boolean res = (rpLidar.connect()==0);
+//                        Log.d("RplHandler", "Connect complete: "+res+" "+System.currentTimeMillis());
+//                        Message rplyMsg = Message.obtain(mMainHandler,MSG_CONNECT_REPLY,res?1:0,0);
+//                        rplyMsg.sendToTarget();
+//                        break;
 
-                        break;
-
-                    case MSG_CONNECT_REQUEST:
-                        Log.d("RplHandler", "Starting connect... "+System.currentTimeMillis()+"in thread "+Thread.currentThread());
-                        boolean res = (rpLidar.connect()==0);
-                        Log.d("S2Handler", "Connect complete: "+res+" "+System.currentTimeMillis());
-                        Message rplyMsg = Message.obtain(mMainHandler,MSG_CONNECT_REPLY,res?1:0,0);
-                        rplyMsg.sendToTarget();
-                        break;
+//                    case MSG_SPEED_REQ:
+//                        Log.d("RplHandler", "Starting connect... "+System.currentTimeMillis()+"in thread "+Thread.currentThread());
+//
+//                        Log.d("S2Handler", "Connect complete: "+res+" "+System.currentTimeMillis());
+//                        Message rplyMsg = Message.obtain(mMainHandler,MSG_CONNECT_REPLY,res?1:0,0);
+//                        rplyMsg.sendToTarget();
+//                        break;
 
                     default:
                         break;
@@ -197,17 +205,17 @@ public class RpLidarHandler {
     };
 
 
-    public boolean connectLidar(){
-        if(rplReady){
-            rplReady = false;
-            Log.d("RplHandler", "lidar connect request sending " + Thread.currentThread());
-            mRplHandler.sendEmptyMessage(MSG_CONNECT_REQUEST);
-        }
-        else{
-            Log.d("RplHandler","Lidar is not ready or busy");
-        }
-        return rpLidar.isconnected();
-    }
+//    public boolean connectLidar(){
+//        if(rplReady){
+//            rplReady = false;
+//            Log.d("RplHandler", "lidar connect request sending " + Thread.currentThread());
+//            mRplHandler.sendEmptyMessage(MSG_CONNECT_REQUEST);
+//        }
+//        else{
+//            Log.d("RplHandler","Lidar is not ready or busy");
+//        }
+//        return rpLidar.isconnected();
+//    }
 
     public boolean setSpeed(float spd){
         if(spd < 0f || spd > 100.0f){

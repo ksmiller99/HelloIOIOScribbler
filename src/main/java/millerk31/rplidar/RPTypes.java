@@ -64,6 +64,7 @@ public class RPTypes {
     public static final int RESULT_OPERATION_NOT_SUPPORT = (0x8004 | RESULT_FAIL_BIT);
     public static final int RESULT_FORMAT_NOT_SUPPORT    = (0x8005 | RESULT_FAIL_BIT);
     public static final int RESULT_INSUFFICIENT_MEMORY   = (0x8006 | RESULT_FAIL_BIT);
+    public static final int RESULT_BUSY                  = (0x8007 | RESULT_FAIL_BIT);
 
     public static boolean IS_OK(int x){
          return((x & RESULT_FAIL_BIT) == 0 );
