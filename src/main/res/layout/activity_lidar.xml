@@ -46,7 +46,7 @@
 
     </LinearLayout>
 
-    <millerk31.ioio.scribbler.test.MyPanelAuto
+    <millerk31.ioio.scribbler.MyPanelAuto
         android:id="@+id/pnl"
         android:layout_width="match_parent"
         android:layout_height="400dp" />

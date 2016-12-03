@@ -1,4 +1,4 @@
-package millerk31.ioio.scribbler.test;
+package millerk31.ioio.scribbler;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -18,15 +18,21 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import static millerk31.ioio.scribbler.test.MyApp.tvRxDataSave2;
+import millerk31.rplidar.RpLidarService;
 
-import millerk31.rplidar.*;
+import static millerk31.ioio.scribbler.MyIoioService.*;
+//import static millerk31.ioio.scribbler.MyIoioService.IOIO_CONNECTED_INTENT_MSG;
+//import static millerk31.ioio.scribbler.MyIoioService.IOIO_DISCONNECTED_INTENT_MSG;
+//import static millerk31.ioio.scribbler.MyIoioService.LIDAR_CONNECTED_INTENT_MSG;
+//import static millerk31.ioio.scribbler.MyIoioService.LIDAR_DISCONNECTED_INTENT_MSG;
+import static millerk31.ioio.scribbler.MyApp.tvRxDataSave2;
 
 public class SecondActivity extends Activity {
 
-    RpLidar rpLidar = RpLidar.getInstance();
+    //RpLidar rpLidar = RpLidar.getInstance();
 
     private ToggleButton toggleButton_;
     private Button btnReset;
@@ -37,20 +43,27 @@ public class SecondActivity extends Activity {
     private Button btnInfo;
     private Button btnHealth;
     private Button btnSRate;
+    private Button btnUnBusy;
     private TextView tvRxData;
     private EditText etTxData;
 
-    boolean isBound = false;
-    Messenger messenger = null;
+    boolean isIoioBound = false;
+    Messenger ioioMessenger = null;
+
+    boolean isLidarBound = false;
+    Messenger lidarMessenger = null;
 
     //create IntentFilters for receiving broadcast messages
-    IntentFilter connectFilter = new IntentFilter("IOIO_CONNECTED");
-    IntentFilter disconnectFilter = new IntentFilter("IOIO_DISCONNECTED");
-    IntentFilter lidarConnectFilter = new IntentFilter("LIDAR_CONNECTED");
-    IntentFilter lidarDisconnectFilter = new IntentFilter("LIDAR_DISCONNECTED");
+    IntentFilter ioioConnectFilter = new IntentFilter(IOIO_CONNECTED_INTENT_MSG);
+    IntentFilter ioioDisconnectFilter = new IntentFilter(IOIO_DISCONNECTED_INTENT_MSG);
+    IntentFilter scribblerConnectFilter = new IntentFilter(SCRIBBLER_CONNECTED_INTENT_MSG);
+    IntentFilter scribblerDisconnectFilter = new IntentFilter(SCRIBBLER_DISCONNECTED_INTENT_MSG);
+    IntentFilter lidarConnectFilter = new IntentFilter(LIDAR_CONNECTED_INTENT_MSG);
+    IntentFilter lidarDisconnectFilter = new IntentFilter(LIDAR_DISCONNECTED_INTENT_MSG);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        String TAG = "SecondActivity.onCreate";
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_second);
@@ -65,40 +78,90 @@ public class SecondActivity extends Activity {
         btnInfo = (Button) findViewById(R.id.btnInfo);
         btnHealth = (Button) findViewById(R.id.btnHealth);
         btnSRate = (Button) findViewById(R.id.btnSRate);
+        btnUnBusy = (Button) findViewById(R.id.btnUnBusy);
 
         //assume IOIO is disconnected at start
-        enableUi(false);
+        enableIoioUi(false);
+
+        //assume Lidar is disconnected at start
+        enableLidarUi(false);
 
         //bind to  the IOIO service
-        Intent intent = new Intent(this, IOIOScribblerService.class);
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-        Log.d("KSM", "Second.onCreate Finished");
+        Log.d(TAG,"Binding to existing IOIO service...");
+        bindService(new Intent(this, MyIoioService.class), ioioServiceConnection, Context.BIND_AUTO_CREATE);
+
+
+        //bind to Lidar service
+        Log.d(TAG,"Binding to existing LIDAR service...");
+        bindService(new Intent(this, RpLidarService.class), lidarServiceConnection, Context.BIND_AUTO_CREATE);
+
+       Log.d(TAG, "Finished");
     }
 
     //Outbound messages go through ServiceConnection
-    private ServiceConnection serviceConnection = new ServiceConnection() {
+    private ServiceConnection lidarServiceConnection = new ServiceConnection() {
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            Log.d("KSM", "Second.onServiceConnected");
-            isBound = true;
+            Log.d("KSM", "Lidar.onServiceConnected");
+            isLidarBound = true;
 
             // Create the Messenger object
-            messenger = new Messenger(service);
+            lidarMessenger = new Messenger(service);
 
             //update UI elements to match IOIO state
-            Message msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+            Message msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new IncomingHandler());
             try {
-                messenger.send(msg);
+                lidarMessenger.send(msg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
 
-            msg = Message.obtain(null, IOIOScribblerService.LED_STATUS_REQUEST);
+            msg = Message.obtain(null, MyIoioService.LED_STATUS_REQUEST);
             msg.replyTo = new Messenger(new IncomingHandler());
             try {
-                messenger.send(msg);
+                lidarMessenger.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d("KSM", "Lidar.onServiceDisconnect");
+
+            // unbind or process might have crashes
+            lidarMessenger = null;
+            isLidarBound = false;
+        }
+
+    };
+
+    //Outbound IOIO messages go through ioioServiceConnection
+    private ServiceConnection ioioServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("KSM", "Second.onServiceConnected");
+            isIoioBound = true;
+
+            // Create the Messenger object
+            ioioMessenger = new Messenger(service);
+
+            //update UI elements to match IOIO state
+            Message msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
+            msg.replyTo = new Messenger(new IncomingHandler());
+            try {
+                ioioMessenger.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
+            msg = Message.obtain(null, MyIoioService.LED_STATUS_REQUEST);
+            msg.replyTo = new Messenger(new IncomingHandler());
+            try {
+                ioioMessenger.send(msg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -109,8 +172,8 @@ public class SecondActivity extends Activity {
             Log.d("KSM", "Second.onServiceDisconnect");
 
             // unbind or process might have crashes
-            messenger = null;
-            isBound = false;
+            ioioMessenger = null;
+            isIoioBound = false;
         }
     };
 
@@ -119,25 +182,27 @@ public class SecondActivity extends Activity {
         //enableLidarUi(rpLidar.isconnected());
 
         //setup broadcast receivers
-        registerReceiver(myReceiver, connectFilter);
-        registerReceiver(myReceiver, disconnectFilter);
+        registerReceiver(myReceiver, ioioConnectFilter);
+        registerReceiver(myReceiver, ioioDisconnectFilter);
+        registerReceiver(myReceiver, scribblerConnectFilter);
+        registerReceiver(myReceiver, scribblerDisconnectFilter);
         registerReceiver(myReceiver, lidarConnectFilter);
         registerReceiver(myReceiver, lidarDisconnectFilter);
 
         //update UI elements to match IOIO state
-        if (isBound) {
-            Message msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+        if (isIoioBound) {
+            Message msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new IncomingHandler());
             try {
-                messenger.send(msg);
+                ioioMessenger.send(msg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
 
-            msg = Message.obtain(null, IOIOScribblerService.LED_STATUS_REQUEST);
+            msg = Message.obtain(null, MyIoioService.LED_STATUS_REQUEST);
             msg.replyTo = new Messenger(new IncomingHandler());
             try {
-                messenger.send(msg);
+                ioioMessenger.send(msg);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -152,9 +217,11 @@ public class SecondActivity extends Activity {
     @Override
     //make sure service is disconnected from activity
     protected void onDestroy() {
-        unbindService(serviceConnection);
-        messenger = null;
-        isBound = false;
+        unbindService(ioioServiceConnection);
+        isIoioBound = false;
+        unbindService(lidarServiceConnection);
+        isLidarBound = false;
+        ioioMessenger = null;
 
         super.onDestroy();
     }
@@ -184,27 +251,28 @@ public class SecondActivity extends Activity {
         public void handleMessage(Message msg) {
 
             switch (msg.what) {
-                case IOIOScribblerService.LED_BLINK_REPLY:
+                case MyIoioService.LED_BLINK_REPLY:
                     Log.d("KSM", "LED_BLINK_REPLY message handled");
                     toggleButton_.setChecked(true);
                     break;
 
-                case IOIOScribblerService.LED_OFF_REPLY:
+                case MyIoioService.LED_OFF_REPLY:
                     Log.d("KSM", "LED_OFF_REPLY message handled");
                     toggleButton_.setChecked(false);
                     break;
 
-                case IOIOScribblerService.LED_STATUS_REPLY:
+                case MyIoioService.LED_STATUS_REPLY:
                     toggleButton_.setChecked(msg.arg1 == 1);
                     Log.d("KSM", "LED_STATUS_REPLY: " + msg.arg1 + " message handled");
                     break;
 
-                case IOIOScribblerService.IOIO_STATUS_REPLY:
-                    enableUi(msg.arg1 == 1);
+                case MyIoioService.IOIO_STATUS_REPLY:
+                    enableIoioUi(msg.arg1 == 1);
                     Log.d("KSM", "IOIO_STATUS_REPLY: " + msg.arg1 + " message handled");
+                    Log.d("KSM", "ioio_state: "+(MyIoioService.ioio_state?"true":"false"));
                     break;
 
-                case IOIOScribblerService.ERROR_REPLY:
+                case MyIoioService.ERROR_REPLY:
                     Log.d("KSM", "ERROR_REPLY to message type: " + msg.arg1 + " message handled");
                     break;
 
@@ -222,9 +290,9 @@ public class SecondActivity extends Activity {
 
         //set message type based on toggle status after clicking
         if (tgl.isChecked())
-            msgType = IOIOScribblerService.LED_BLINK_REQUEST;
+            msgType = MyIoioService.LED_BLINK_REQUEST;
         else
-            msgType = IOIOScribblerService.LED_OFF_REQUEST;
+            msgType = MyIoioService.LED_OFF_REQUEST;
 
         //revert button state so that IOIO can control it via the reply message in case
         //there is some unknown reason in the service that would prevent the state change
@@ -236,7 +304,7 @@ public class SecondActivity extends Activity {
         Log.d("KSM", "Toggle Message " + msgType + " sending...");
 
         try {
-            messenger.send(msg);
+            ioioMessenger.send(msg);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -258,26 +326,38 @@ public class SecondActivity extends Activity {
     BroadcastReceiver myReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            Log.d("KSM", "Broadcast intent received");
-            if (intent.getAction().equals("IOIO_DISCONNECTED")) {
-                enableUi(false);
-                Log.d("KSM", "Broadcast DISCONNECTED intent received");
+            String TAG = "MainActivity.myReceiver";
 
-            } else if (intent.getAction().equals("IOIO_CONNECTED")) {
-                enableUi(true);
-                Log.d("KSM", "Broadcast CONNECTED intent received");
+            Log.d(TAG, "Broadcast intent received");
+            if (intent.getAction().equals(IOIO_CONNECTED_INTENT_MSG)) {
+                enableIoioUi(true);
+                Log.d(TAG, "Broadcast IOIO_CONNECTED_INTENT_MSG intent received");
 
-            } else if (intent.getAction().equals("LIDAR_CONNECTED")) {
-                enableUi(true);
-                Log.d("KSM", "Broadcast LIDAR CONNECTED intent received");
+            } else if (intent.getAction().equals(IOIO_DISCONNECTED_INTENT_MSG)) {
+                enableIoioUi(false);
+                Log.d(TAG, "Broadcast IOIO_DISCONNECTED_INTENT_MSG intent received");
 
-                tvRxData.setText(rpLidar.getDeviceInfo());
+            }  else if(intent.getAction().equals(SCRIBBLER_CONNECTED_INTENT_MSG)){
+                Toast.makeText(getApplicationContext(),"S2 Connected",Toast.LENGTH_SHORT).show();
+                //enableScribblerUi(true);
+
+            } else if(intent.getAction().equals(SCRIBBLER_DISCONNECTED_INTENT_MSG)){
+                Toast.makeText(getApplicationContext(),"S2 Disconnected",Toast.LENGTH_SHORT).show();
+                //enableScribblerUi(false);
+
+            } else if(intent.getAction().equals(LIDAR_CONNECTED_INTENT_MSG)){
+                Toast.makeText(getApplicationContext(),"Lidar Connected",Toast.LENGTH_SHORT).show();
+                enableLidarUi(true);
+
+            } else if(intent.getAction().equals(LIDAR_DISCONNECTED_INTENT_MSG)){
+                Toast.makeText(getApplicationContext(),"Lidar Disconnected",Toast.LENGTH_SHORT).show();
+                enableLidarUi(false);
             }
 
         }
     };
 
-    private void enableUi(final boolean enable) {
+    private void enableIoioUi(final boolean enable) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -291,13 +371,14 @@ public class SecondActivity extends Activity {
             @Override
             public void run() {
                 btnFScan.setEnabled(enable);
-                btnReset.setEnabled(enable);
+                //btnReset.setEnabled(enable);
                 btnScan.setEnabled(enable);
                 btnXScan.setEnabled(enable);
                 btnStop.setEnabled(enable);
                 btnInfo.setEnabled(enable);
                 btnHealth.setEnabled(enable);
                 btnSRate.setEnabled(enable);
+                //btnUnBusy.setEnabled(enable);
             }
         });
     }
@@ -323,20 +404,35 @@ public class SecondActivity extends Activity {
     }
 
     public void btnResetOnClick(View v) {
-        rpLidar.reset();
+        //rpLidar.reset();
+
+        Message msg = Message.obtain(null, RpLidarService.MSG_LIDAR_RESET_REQ, 0, 0);
+        msg.replyTo = new Messenger(new IncomingHandler());
+
+        Log.d("KSM", "Toggle Message MSG_LIDAR_RESET_REQ sending...");
+
+        try {
+            lidarMessenger.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void btnStopOnClick(View v) {
-        //rplidar.stop();
+
+        //rpLidar.stop();
     }
 
     public void btnFScanOnClick(View v) {
-        //rplidar.startForceScan();
+
+        //rpLidar.startForceScan();
     }
 
     public void btnInfoOnClick(View v) {
         //rplidar.getInfo();
-        tvRxData.setText(tvRxData.getText() + rpLidar.getDeviceInfo());
+        //tvRxData.setText(tvRxData.getText() +
+                //rpLidar.getDeviceInfo());
     }
 
     public void btnHealthOnClick(View v) {
@@ -344,7 +440,8 @@ public class SecondActivity extends Activity {
     }
 
     public void btnScanOnClick(View v) {
-        //rplidar.startScan();
+
+        //rpLidar.startScan();
     }
 
     public void btnSRateOnClick(View v) {
@@ -352,6 +449,7 @@ public class SecondActivity extends Activity {
     }
 
     public void btnUnBusyOnClick(View v){
-        rpLidar.unBusy();
+
+        //rpLidar.unBusy();
     }
 }

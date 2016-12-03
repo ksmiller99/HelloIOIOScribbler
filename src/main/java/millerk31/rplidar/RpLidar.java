@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import ioio.lib.api.Uart;
-import millerk31.ioio.scribbler.test.IOIOScribblerService;
+import millerk31.ioio.scribbler.MyIoioService;
 
 //import static millerk31.rplidar.RPLidar_protocol.RPLIDAR_CMDFLAG_HAS_PAYLOAD;
 //import static millerk31.rplidar.RPLidar_protocol.RPLIDAR_CMD_SYNC_BYTE;
@@ -111,6 +111,7 @@ public class RpLidar {
         String TAG = "RpLidar.connect";
 
         Log.d(TAG,"Connect started");
+
         if (_busy){
             Log.d(TAG,"Connect return: _busy");
 
@@ -120,7 +121,7 @@ public class RpLidar {
 
         int retval = RPTypes.RESULT_OPERATION_FAIL;
 
-        if(!IOIOScribblerService.ioio_state){
+        if(!MyIoioService.ioio_state){
             _isconnected = false;
             Log.d(TAG,"Return: IOIO not connected");
             _busy = false;
@@ -244,7 +245,7 @@ public class RpLidar {
     // check whether the serial interface is opened
     public boolean isOpen()
     {
-        return IOIOScribblerService.ioio_state;
+        return MyIoioService.ioio_state;
     }
 
     /**
@@ -283,6 +284,7 @@ public class RpLidar {
         String TAG = "RpLidar.reset";
         Log.d(TAG, "Starting...");
 
+        //make sure IOIO is connected
         if(!isOpen()) return false;
 
         RplRequest req = getRplRequest(RequestTypes.RESET);
@@ -317,6 +319,12 @@ public class RpLidar {
             e.printStackTrace();
             Log.d(TAG,"FAIL: IO Exception");
             return false;
+        } catch (NullPointerException e){
+            //why is this happening? BT Disconnect?
+            e.printStackTrace();
+            Log.d(TAG,"FAIL: InputSteam NullPointerException");
+            return false;
+
         }
 
         _flushInput();
@@ -406,17 +414,30 @@ public class RpLidar {
     }
 
     public synchronized boolean startScan(){
+        String TAG = "RpLidar.startScan";
+        Log.d(TAG,"Starting...");
+
         if (!isOpen()) return false;
         if (!stop()) return false;
 
         RplRequest req = getRplRequest(RequestTypes.SCAN);
         if(req==null) return false;
 
-        return waitByteString(req.resDesc,500);
+        _busy = true;
+        if (!doRplRequest(req)){
+            _busy = false;
+            Log.d(TAG,"FAILED doRplRequesg");
+            return false;
+        }
+
+        grabScanPoints();
+        Log.d(TAG,"Exiting...");
+
+        return true;
     }
 
     public synchronized boolean startForceScan(){
-        String TAG = "RpLidar.startForcecan";
+        String TAG = "RpLidar.startForceScan";
         Log.d(TAG,"Starting...");
 
         if (!isOpen()) return false;
@@ -440,6 +461,8 @@ public class RpLidar {
     }
 
     private void grabScanPoints(){
+        final String TAG = "RpLidar.grabScanPoints";
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -449,9 +472,10 @@ public class RpLidar {
                     if (scanPoint == null) {
                         break;
                     }
-                    Log.d("RpLidar.grabScanPoints","ScanPoint: "+scanPoint.angle+" "+scanPoint.distance);
+                    Log.d(TAG,"ScanPoint: "+scanPoint.angle+" "+scanPoint.distance);
                 }
                 _busy = false;
+                Log.d(TAG,"Broke While - _stopRequest= "+_stopRequest);
             }
         });
         thread.setName("thdGrabScanPoints");
@@ -470,9 +494,13 @@ public class RpLidar {
     }
 
     public synchronized RPLidarScanPoint waitScanPoint(){
+        String TAG = "RpLidar.waitScanPoint";
         int timeout = 500;
         byte[] b = captureNBytes(5, timeout);
-        if(b == null) return null;
+        if(b == null){
+            Log.d(TAG,"captureNBytes failed");
+            return null;
+        }
 
         return new RPLidarScanPoint(b);
     }
@@ -487,15 +515,27 @@ public class RpLidar {
         Log.d(TAG,"Starting...");
         boolean retval = false;
 
+        try {
+            Log.d(TAG, "_inputStream.vailable(): " + _inputStream.available());
+        }catch(IOException e){
+            e.printStackTrace();
+            Log.d(TAG,"IOException: "+e.getMessage());
+        }
+
         //place request in out queue
         try {
             Log.d(TAG,"Writing :"+bytesToHex(req.reqPacket));
+            _outputStream.flush();
             _outputStream.write(req.reqPacket);
         } catch (IOException e) {
             e.printStackTrace();
             Log.d("TAG", "Return, Write Fail - Request: "+req.name.toString());
             return retval;
         }
+
+
+//        Log.d(TAG,"DEBUG RETURN");
+//        if(true) return false;
 
         //return if no response is expected
         if (req.resDesc == null) {
@@ -568,7 +608,7 @@ public class RpLidar {
             e.printStackTrace();
         }
         Thread.yield(); //give queue time to fill
-        timeoutMs *= 10;
+        //timeoutMs *= 10;
         int strLen = byteStr.length;
         Byte currentByte = null;
 
@@ -579,6 +619,8 @@ public class RpLidar {
             Log.d(TAG,"..._inputStream.avail: "+_inputStream.available());
         } catch (IOException e) {
             e.printStackTrace();
+            Log.d(TAG,"IOException: "+e.getMessage());
+            return false;
         }
         long timeout = System.currentTimeMillis()+timeoutMs*4;
 

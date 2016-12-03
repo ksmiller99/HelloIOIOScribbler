@@ -1,4 +1,4 @@
-package millerk31.ioio.scribbler.test;
+package millerk31.ioio.scribbler;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -22,7 +22,7 @@ import android.widget.ToggleButton;
 
 import millerk31.rplidar.RpLidar;
 
-import static millerk31.ioio.scribbler.test.R.id.pnl;
+import static millerk31.ioio.scribbler.R.id.pnl;
 
 public class LidarActivity extends Activity {
     private RpLidar rpLidar = RpLidar.getInstance();
@@ -63,7 +63,7 @@ public class LidarActivity extends Activity {
 
 
         //bind to  the IOIO service
-        Intent intent = new Intent(this, IOIOScribblerService.class);
+        Intent intent = new Intent(this, MyIoioService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         sbMotorSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -98,7 +98,7 @@ public class LidarActivity extends Activity {
             messenger = new Messenger(service);
 
             //update UI elements to match IOIO state
-            Message msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+            Message msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
             try {
                 messenger.send(msg);
@@ -106,10 +106,10 @@ public class LidarActivity extends Activity {
                 e.printStackTrace();
             }
 
-//            msg = Message.obtain(null, IOIOScribblerService.LIDAR_STATUS_REQUEST);
+//            msg = Message.obtain(null, MyIoioService.LIDAR_STATUS_REQUEST);
 //            msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
 //            try {
-//                messenger.send(msg);
+//                ioioMessenger.send(msg);
 //            } catch (RemoteException e) {
 //                e.printStackTrace();
 //            }
@@ -140,7 +140,7 @@ public class LidarActivity extends Activity {
         //update UI elements to match IOIO state
         if (isBound) {
             Message msg = new Message();
-            msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+            msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
             try {
                 messenger.send(msg);
@@ -148,7 +148,7 @@ public class LidarActivity extends Activity {
                 e.printStackTrace();
             }
 
-            msg = Message.obtain(null, IOIOScribblerService.IOIO_STATUS_REQUEST);
+            msg = Message.obtain(null, MyIoioService.IOIO_STATUS_REQUEST);
             msg.replyTo = new Messenger(new LidarActivity.IncomingHandler());
             try {
                 messenger.send(msg);
@@ -194,28 +194,28 @@ public class LidarActivity extends Activity {
         public void handleMessage(Message msg) {
 
             switch (msg.what) {
-//                case IOIOScribblerService.LIDAR_ON_REPLY:
+//                case MyIoioService.LIDAR_ON_REPLY:
 //                    Log.d("KSM", "LIDAR_ON_REPLY message handled");
 //                    tglLidar.setChecked(true);
 //                    break;
 //
-//                case IOIOScribblerService.LIDAR_OFF_REPLY:
+//                case MyIoioService.LIDAR_OFF_REPLY:
 //                    Log.d("KSM", "LIDAR_OFF_REPLY message handled");
 //                    tglLidar.setChecked(false);
 //                    break;
 //
-//                case IOIOScribblerService.LIDAR_STATUS_REPLY:
+//                case MyIoioService.LIDAR_STATUS_REPLY:
 //                    enableIoioUi(msg.arg1 == 1);
 //                    Toast.makeText(getBaseContext(),"LIDAR Status: "+ msg.arg1, Toast.LENGTH_SHORT).show();
 //                    Log.d("KSM", "LIDAR_STATUS_REPLY: " + msg.arg1 + " message handled");
 //                    break;
 
-                case IOIOScribblerService.IOIO_STATUS_REPLY:
+                case MyIoioService.IOIO_STATUS_REPLY:
                     enableIoioUi(msg.arg1 == 1);
                     Log.d("KSM", "IOIO_STATUS_REPLY: " + msg.arg1 + " message handled");
                     break;
 
-                case IOIOScribblerService.ERROR_REPLY:
+                case MyIoioService.ERROR_REPLY:
                     Log.d("KSM", "ERROR_REPLY to message type: " + msg.arg1 + " message handled");
                     break;
 
@@ -234,9 +234,9 @@ public class LidarActivity extends Activity {
 //
 //        //set message type based on toggle status after clicking
 //        if (tgl.isChecked())
-//            msgType = IOIOScribblerService.LIDAR_ON_REQUEST;
+//            msgType = MyIoioService.LIDAR_ON_REQUEST;
 //        else
-//            msgType = IOIOScribblerService.LIDAR_OFF_REQUEST;
+//            msgType = MyIoioService.LIDAR_OFF_REQUEST;
 //
 //        //revert button state so that IOIO can control it via the reply message in case
 //        //there is some unknown reason in the service that would prevent the state change
@@ -248,7 +248,7 @@ public class LidarActivity extends Activity {
 //        Log.d("KSM", "Toggle Message " + msgType + " sending...");
 //
 //        try {
-//            messenger.send(msg);
+//            ioioMessenger.send(msg);
 //        } catch (RemoteException e) {
 //            e.printStackTrace();
 //        }
@@ -279,9 +279,9 @@ public class LidarActivity extends Activity {
 //
 //        //set message type based on toggle status after clicking
 //        if (tgl.isChecked())
-//            msgType = IOIOScribblerService.LIDAR_ON_REQUEST;
+//            msgType = MyIoioService.LIDAR_ON_REQUEST;
 //        else
-//            msgType = IOIOScribblerService.LIDAR_OFF_REQUEST;
+//            msgType = MyIoioService.LIDAR_OFF_REQUEST;
 //
 //        //revert button state so that IOIO can control it via the reply message in case
 //        //there is some unknown reason in the service that would prevent the state change
@@ -293,7 +293,7 @@ public class LidarActivity extends Activity {
 //        Log.d("KSM", "Lidar Toggle Message " + msgType + " sending...");
 //
 //        try {
-//            messenger.send(msg);
+//            ioioMessenger.send(msg);
 //        } catch (RemoteException e) {
 //            e.printStackTrace();
 //        }
@@ -352,7 +352,7 @@ public class LidarActivity extends Activity {
         Button btn = (Button) v;
         int speed = Integer.parseInt(btn.getText().toString());
 
-        int msgType = IOIOScribblerService.LIDAR_SPEED_REQ;
+        int msgType = MyIoioService.LIDAR_SPEED_REQ;
         Message msg = Message.obtain(null,msgType,speed,0);
         try {
             messenger.send(msg);

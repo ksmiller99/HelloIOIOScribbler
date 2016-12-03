@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="millerk31.ioio.scribbler.test"
+    package="millerk31.ioio.scribbler"
     android:versionCode="1"
     android:versionName="1.0">
 
@@ -19,7 +19,10 @@
             android:name="com.android.future.usb.accessory"
             android:required="false" />
 
-        <service android:name=".IOIOScribblerService" />
+        <service android:name=".MyIoioService"
+            android:process=":ioio"/>
+        <service android:name="millerk31.rplidar.RpLidarService"
+            android:process=":lidar" />
 
         <activity
             android:name=".MainActivity"

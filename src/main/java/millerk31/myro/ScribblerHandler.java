@@ -6,8 +6,6 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 
-import millerk31.ioio.scribbler.test.MyApp;
-
 /**
  * Created by Kevin on 11/7/2016.
  */

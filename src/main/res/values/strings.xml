@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Hello IOIO Scribbler Test</string>
+    <string name="app_name">IOIO Scribbler LIDAR Test</string>
     <string name="analog_label">Analog reading:</string>
     <string name="second_activity_label">Second Activity</string>
     <string name="main_activity_label">Main Activity</string>
+    <string name="remote_service_started">Lidar Service Started</string>
+    <string name="local_service_label">Lidar Service</string>
+    <string name="remote_service_stopped">Lidar Service Stopped</string>
 </resources>

@@ -1,4 +1,4 @@
-package millerk31.ioio.scribbler.test;
+package millerk31.ioio.scribbler;
 
 import android.content.Context;
 import android.graphics.Bitmap;
